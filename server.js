@@ -23,61 +23,27 @@ const client = new CoinGeckoClient({
 // Middleware
 app.use(express.json());
 
-// CORS middleware for claude.ai
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
-  
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
-  }
-  
-  next();
-});
-
-// Initialize MCP handler
-const { methods } = require('./mcp-protected');
-const mcpHandler = new MCPHandler(methods, mcpSchemas);
-
-// MCP endpoint - handles both SSE and POST requests
-app.get('/mcp', (req, res) => {
-  // Handle SSE connections for real-time communication
-  if (req.headers.accept === 'text/event-stream') {
-    mcpHandler.handleSSEConnection(req, res);
-  } else {
-    // Return capabilities for regular GET requests
-    res.json(mcpHandler.getCapabilities());
-  }
-});
-
-app.post('/mcp', async (req, res) => {
-  try {
-    const response = await mcpHandler.handleMessage(req.body);
-    res.json(response);
-  } catch (error) {
-    res.status(500).json({
-      jsonrpc: '2.0',
-      error: {
-        code: -32603,
-        message: 'Internal server error',
-        data: error.message
-      }
-    });
-  }
-});
-
 // JSON-RPC endpoint for MCP
 app.post('/rpc', jsonRpcMiddleware);
 
-// MCP Schema endpoint
+// Essential MCP endpoints for Claude.ai discovery
+app.get('/mcp', mcpServerInfo);
+app.get('/mcp/tools', mcpToolsList);
+
+// MCP Schema endpoint (keep for compatibility)
 app.get('/mcp/schema', (req, res) => {
   res.json(mcpSchemas);
 });
 
 // Basic health check route
 app.get('/', async (req, res) => {
-  res.json({ message: 'CoinGecko API Server is running' });
+  res.json({ 
+    message: 'Protected CoinGecko MCP Server is running',
+    mcp_endpoint: '/mcp',
+    tools_endpoint: '/mcp/tools',
+    protection: 'EVMAuth token-gated',
+    contract: '0x9f2B42FB651b75CC3db4ef9FEd913A22BA4629Cf'
+  });
 });
 
 // PING endpoint - Check API server status
