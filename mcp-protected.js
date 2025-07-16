@@ -274,3 +274,6 @@ const server = jayson.server(protectedMethods);
 
 // Export the middleware for use in Express
 module.exports = server.middleware();
+
+// Also export protected methods for MCP handler
+module.exports.methods = protectedMethods;

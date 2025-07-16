@@ -29,6 +29,16 @@ Claude.ai Web → EVMAuth MCP Server → Protected CoinGecko MCP Server → Coin
                     8. Retry Access
 ```
 
+## 🔧 MCP Protocol Support
+
+This server now includes full MCP (Model Context Protocol) support for claude.ai integration:
+
+- **`/mcp` endpoint**: Handles MCP protocol communication
+  - GET: Returns server capabilities or establishes SSE connection
+  - POST: Processes MCP protocol messages (initialize, tools/list, tools/call)
+- **SSE Transport**: Real-time communication support for claude.ai
+- **Tool Discovery**: Automatic conversion of JSON-RPC methods to MCP tools
+
 ## 🚀 Quick Start
 
 ### Prerequisites
