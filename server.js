@@ -281,14 +281,24 @@ if (isProduction) {
       transportType: "httpStream",
       httpStream: {
         port: port,
-        endpoint: "/mcp"
+        endpoint: "/mcp",
+        // Bind to all interfaces for Railway
+        host: "0.0.0.0"
       }
     });
-    console.log(`✅ FastMCP server running on port ${port}`);
+    console.log(`✅ FastMCP server running on http://0.0.0.0:${port}`);
     console.log(`📍 MCP endpoint: http://0.0.0.0:${port}/mcp`);
     console.log(`🔐 EVMAuth protection: ${evmAuthSDK ? 'Enabled' : 'Disabled'}`);
+    console.log(`🌐 Ready to accept connections`);
+    
+    // Keep process alive
+    process.on('SIGTERM', () => {
+      console.log('SIGTERM received, shutting down gracefully');
+      process.exit(0);
+    });
   } catch (error) {
     console.error('❌ Failed to start server:', error);
+    console.error('Stack trace:', error.stack);
     process.exit(1);
   }
 } else {
