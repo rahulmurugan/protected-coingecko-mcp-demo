@@ -6,6 +6,8 @@ require('dotenv').config(); // Load environment variables from .env file
 const jsonRpcMiddleware = require('./mcp-protected');
 // Import MCP schemas
 const mcpSchemas = require('./mcp-schema');
+// Import MCP handler
+const MCPHandler = require('./mcp-handler');
 
 // Initialize Express
 const app = express();
@@ -20,9 +22,6 @@ const client = new CoinGeckoClient({
 
 // Middleware
 app.use(express.json());
-
-// Import MCP endpoints
-const { mcpServerInfo, mcpToolsList } = require('./mcp-endpoints');
 
 // JSON-RPC endpoint for MCP
 app.post('/rpc', jsonRpcMiddleware);
