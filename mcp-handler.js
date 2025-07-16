@@ -38,9 +38,20 @@ class MCPHandler extends EventEmitter {
     
     if (this.schemas && this.schemas.schema && this.schemas.schema.properties) {
       Object.entries(this.schemas.schema.properties).forEach(([name, method]) => {
+        // Ensure we have valid inputSchema
+        const inputSchema = method.parameters || {
+          type: "object",
+          properties: {},
+          required: []
+        };
+        
         tools[name] = {
-          description: method.description,
-          inputSchema: method.parameters
+          description: method.description || `Execute ${name} method`,
+          inputSchema: {
+            type: inputSchema.type || "object",
+            properties: inputSchema.properties || {},
+            required: inputSchema.required || []
+          }
         };
       });
     }
@@ -105,10 +116,21 @@ class MCPHandler extends EventEmitter {
     
     if (this.schemas && this.schemas.schema && this.schemas.schema.properties) {
       Object.entries(this.schemas.schema.properties).forEach(([name, method]) => {
+        // Ensure we have valid inputSchema
+        const inputSchema = method.parameters || {
+          type: "object",
+          properties: {},
+          required: []
+        };
+        
         tools.push({
           name,
-          description: method.description,
-          inputSchema: method.parameters
+          description: method.description || `Execute ${name} method`,
+          inputSchema: {
+            type: inputSchema.type || "object",
+            properties: inputSchema.properties || {},
+            required: inputSchema.required || []
+          }
         });
       });
     }
