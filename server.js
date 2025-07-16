@@ -8,6 +8,8 @@ const jsonRpcMiddleware = require('./mcp-protected');
 const mcpSchemas = require('./mcp-schema');
 // Import MCP handler
 const MCPHandler = require('./mcp-handler');
+// Import MCP endpoints
+const { mcpServerInfo, mcpToolsList } = require('./mcp-endpoints');
 
 // Initialize Express
 const app = express();
