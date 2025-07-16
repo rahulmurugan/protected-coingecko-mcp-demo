@@ -2,7 +2,8 @@ console.log('=== STARTUP DEBUG ===');
 console.log('Node version:', process.version);
 console.log('Environment:', process.env.NODE_ENV);
 console.log('Railway environment:', process.env.RAILWAY_ENVIRONMENT);
-console.log('Port:', process.env.PORT);
+console.log('PORT env var:', process.env.PORT);
+console.log('All env vars:', Object.keys(process.env).filter(k => k.includes('PORT') || k.includes('RAILWAY')).sort());
 console.log('Working directory:', process.cwd());
 console.log('===================');
 

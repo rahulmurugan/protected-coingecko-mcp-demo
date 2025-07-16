@@ -45,7 +45,14 @@ try {
 const server = new FastMCP({
   name: "Protected CoinGecko MCP Server",
   version: "1.0.0",
-  description: "EVMAuth-protected cryptocurrency data access via CoinGecko API"
+  description: "EVMAuth-protected cryptocurrency data access via CoinGecko API",
+  // Enable health endpoint for Railway
+  health: {
+    enabled: true,
+    path: "/health",
+    message: "OK",
+    status: 200
+  }
 });
 
 /**
