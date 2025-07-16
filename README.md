@@ -137,23 +137,26 @@ protected-coingecko-mcp-demo/
 
 ## 🚀 Deployment
 
-### Railway Deployment
+### Railway Deployment (Recommended)
 
-1. **Connect to Railway**
-   ```bash
-   railway login
-   railway new protected-coingecko-mcp-demo
-   ```
+See [DEPLOY_RAILWAY.md](./DEPLOY_RAILWAY.md) for detailed deployment instructions.
 
-2. **Configure environment variables in Railway dashboard**
-   - `COINGECKO_API_KEY`
-   - `PORT` (Railway will set this automatically)
-   - `EVMAUTH_DEV_MODE=false`
+Quick deploy:
+```bash
+# Install Railway CLI
+curl -fsSL https://railway.app/install.sh | sh
 
-3. **Deploy**
-   ```bash
-   railway deploy
-   ```
+# Login and deploy
+railway login
+railway init
+railway up
+
+# Set environment variables
+railway variables set COINGECKO_API_KEY=your_api_key_here
+
+# Generate public URL
+railway domain
+```
 
 ### Other Platforms
 
