@@ -9,7 +9,7 @@ const mcpSchemas = require('./mcp-schema');
 
 // Initialize Express
 const app = express();
-const port = process.env.PORT || 3001;
+const port = parseInt(process.env.PORT) || 3001;
 
 // Initialize CoinGecko API client
 const client = new CoinGeckoClient({
