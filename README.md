@@ -29,15 +29,14 @@ Claude.ai Web → EVMAuth MCP Server → Protected CoinGecko MCP Server → Coin
                     8. Retry Access
 ```
 
-## 🔧 MCP Protocol Support
+## 🔧 Built with FastMCP
 
-This server now includes full MCP (Model Context Protocol) support for claude.ai integration:
+This server is built using [FastMCP](https://github.com/punkpeye/fastmcp), a TypeScript framework that provides:
 
-- **`/mcp` endpoint**: Handles MCP protocol communication
-  - GET: Returns server capabilities or establishes SSE connection
-  - POST: Processes MCP protocol messages (initialize, tools/list, tools/call)
-- **SSE Transport**: Real-time communication support for claude.ai
-- **Tool Discovery**: Automatic conversion of JSON-RPC methods to MCP tools
+- **Full MCP Protocol Support**: Proper implementation of the Model Context Protocol
+- **HTTP Streaming**: Optimized for production deployment and claude.ai integration
+- **EVMAuth Integration**: Token-gated access control for different tool tiers
+- **Automatic Tool Discovery**: Tools are properly exposed to MCP clients
 
 ## 🚀 Quick Start
 
@@ -125,13 +124,11 @@ Add both to your Claude.ai MCP configuration.
 
 ```
 protected-coingecko-mcp-demo/
-├── server.js              # Main Express server
-├── mcp-protected.js       # EVMAuth-wrapped JSON-RPC methods
-├── mcp.js                 # Original CoinGecko methods
+├── server.js              # FastMCP server with EVMAuth protection
 ├── evmauth-config.js      # Token requirements configuration
-├── mcp-schema.js          # MCP schema definitions
 ├── package.json           # Dependencies and scripts
 ├── .env.example           # Environment configuration template
+├── DEPLOY_RAILWAY.md      # Railway deployment guide
 └── README.md             # This file
 ```
 

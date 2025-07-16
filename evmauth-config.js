@@ -1,5 +1,5 @@
-const { config } = require('dotenv');
-config(); // Load environment variables
+import dotenv from 'dotenv';
+dotenv.config(); // Load environment variables
 
 /**
  * EVMAuth Configuration for CoinGecko MCP Server
@@ -7,7 +7,7 @@ config(); // Load environment variables
  */
 
 // EVMAuth SDK Configuration
-const EVMAUTH_CONFIG = {
+export const EVMAUTH_CONFIG = {
   // Blockchain Configuration
   contractAddress: process.env.EVMAUTH_CONTRACT_ADDRESS || '0x9f2B42FB651b75CC3db4ef9FEd913A22BA4629Cf',
   chainId: parseInt(process.env.EVMAUTH_CHAIN_ID) || 1223954, // Radius testnet
@@ -32,7 +32,7 @@ const EVMAUTH_CONFIG = {
 
 // Token Requirements Configuration
 // Maps MCP method names to required token IDs (null = free access)
-const TOKEN_REQUIREMENTS = {
+export const TOKEN_REQUIREMENTS = {
   // Free Tier - No token required
   ping: null,
   getSupportedVsCurrencies: null,
@@ -49,28 +49,21 @@ const TOKEN_REQUIREMENTS = {
 };
 
 // Method Categories for Easy Management
-const METHOD_CATEGORIES = {
+export const METHOD_CATEGORIES = {
   FREE: ['ping', 'getSupportedVsCurrencies'],
   BASIC: ['getPrice'],
   PREMIUM: ['getGlobal', 'getCoinMarkets'],
   PRO: ['getTrending']
 };
 
-// Export configuration
-module.exports = {
-  EVMAUTH_CONFIG,
-  TOKEN_REQUIREMENTS,
-  METHOD_CATEGORIES,
-  
-  // Helper functions
-  isMethodProtected: (methodName) => TOKEN_REQUIREMENTS[methodName] !== null,
-  getRequiredTokenId: (methodName) => TOKEN_REQUIREMENTS[methodName],
-  getMethodCategory: (methodName) => {
-    for (const [category, methods] of Object.entries(METHOD_CATEGORIES)) {
-      if (methods.includes(methodName)) {
-        return category;
-      }
+// Helper functions
+export const isMethodProtected = (methodName) => TOKEN_REQUIREMENTS[methodName] !== null;
+export const getRequiredTokenId = (methodName) => TOKEN_REQUIREMENTS[methodName];
+export const getMethodCategory = (methodName) => {
+  for (const [category, methods] of Object.entries(METHOD_CATEGORIES)) {
+    if (methods.includes(methodName)) {
+      return category;
     }
-    return 'UNKNOWN';
   }
+  return 'UNKNOWN';
 };
