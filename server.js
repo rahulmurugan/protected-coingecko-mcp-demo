@@ -267,20 +267,30 @@ Object.keys(TOKEN_REQUIREMENTS).forEach(methodName => {
 console.log('');
 
 // Start server based on environment
-const transportType = process.env.RAILWAY_ENVIRONMENT ? 'httpStream' : 'stdio';
+const isProduction = process.env.RAILWAY_ENVIRONMENT || process.env.NODE_ENV === 'production';
 const port = parseInt(process.env.PORT) || 3001;
 
-if (transportType === 'httpStream') {
+console.log('🚀 Starting FastMCP server...');
+console.log(`📊 Environment: ${isProduction ? 'Production' : 'Development'}`);
+console.log(`🔧 Port: ${port}`);
+
+if (isProduction) {
   // For Railway/production deployment
-  server.start({
-    transportType: "httpStream",
-    httpStream: {
-      port: port,
-      endpoint: "/mcp"
-    }
-  });
-  console.log(`🚀 FastMCP server running on port ${port}`);
-  console.log(`📍 MCP endpoint: http://localhost:${port}/mcp`);
+  try {
+    await server.start({
+      transportType: "httpStream",
+      httpStream: {
+        port: port,
+        endpoint: "/mcp"
+      }
+    });
+    console.log(`✅ FastMCP server running on port ${port}`);
+    console.log(`📍 MCP endpoint: http://0.0.0.0:${port}/mcp`);
+    console.log(`🔐 EVMAuth protection: ${evmAuthSDK ? 'Enabled' : 'Disabled'}`);
+  } catch (error) {
+    console.error('❌ Failed to start server:', error);
+    process.exit(1);
+  }
 } else {
   // For local development
   server.start({

@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
+    "health": "node health-server.js",
     "dev": "npx fastmcp dev server.js",
     "inspect": "npx fastmcp inspect server.js",
     "test": "node test-integration.js"
