@@ -24,14 +24,275 @@ app.use(express.json());
 // JSON-RPC endpoint for MCP
 app.post('/rpc', jsonRpcMiddleware);
 
-// MCP Schema endpoint
+// === MCP Protocol Endpoints ===
+
+// MCP Server Discovery - This is what Claude.ai looks for first
+app.get('/mcp', (req, res) => {
+  res.json({
+    name: "protected-coingecko-mcp",
+    version: "1.0.0", 
+    description: "EVMAuth-protected CoinGecko MCP Server with token-gated access",
+    author: "EVMAuth Demo",
+    homepage: "https://github.com/rahulmurugan/protected-coingecko-mcp-demo",
+    capabilities: {
+      tools: true,
+      resources: false,
+      prompts: false,
+      logging: false
+    },
+    supportedProtocols: ["http"],
+    apiVersion: "1.0",
+    transport: {
+      type: "http",
+      baseUrl: req.protocol + '://' + req.get('host')
+    },
+    endpoints: {
+      tools: "/mcp/tools",
+      execute: "/mcp/execute"
+    },
+    serverInfo: {
+      protectionLevel: "token-gated",
+      blockchain: "Radius testnet",
+      contract: "0x9f2B42FB651b75CC3db4ef9FEd913A22BA4629Cf",
+      tokenTiers: {
+        free: "ping, getSupportedVsCurrencies",
+        basic: "getPrice (Token 1 - $0.002)",
+        premium: "getGlobal, getCoinMarkets (Token 3 - $0.004)", 
+        pro: "getTrending (Token 5 - $0.006)"
+      }
+    }
+  });
+});
+
+// MCP Tools Discovery - List available tools
+app.get('/mcp/tools', (req, res) => {
+  res.json({
+    tools: [
+      {
+        name: "ping",
+        description: "Check CoinGecko API server status",
+        inputSchema: {
+          type: "object",
+          properties: {},
+          required: []
+        },
+        protection: {
+          required: false,
+          tier: "free"
+        }
+      },
+      {
+        name: "getSupportedVsCurrencies", 
+        description: "Get list of supported vs currencies",
+        inputSchema: {
+          type: "object",
+          properties: {},
+          required: []
+        },
+        protection: {
+          required: false,
+          tier: "free"
+        }
+      },
+      {
+        name: "getPrice",
+        description: "Get cryptocurrency prices (requires Token ID 1)",
+        inputSchema: {
+          type: "object",
+          properties: {
+            ids: {
+              type: "string",
+              description: "Coin IDs comma-separated (e.g. bitcoin,ethereum)"
+            },
+            vs_currencies: {
+              type: "string", 
+              description: "Currency codes comma-separated (e.g. usd,eur)"
+            },
+            include_market_cap: {
+              type: "boolean",
+              description: "Include market cap data"
+            },
+            include_24hr_vol: {
+              type: "boolean",
+              description: "Include 24hr volume"
+            },
+            include_24hr_change: {
+              type: "boolean",
+              description: "Include 24hr change"
+            }
+          },
+          required: ["ids", "vs_currencies"]
+        },
+        protection: {
+          required: true,
+          tier: "basic",
+          tokenId: 1,
+          price: "$0.002"
+        }
+      },
+      {
+        name: "getGlobal",
+        description: "Get global cryptocurrency market data (requires Token ID 3)",
+        inputSchema: {
+          type: "object",
+          properties: {},
+          required: []
+        },
+        protection: {
+          required: true,
+          tier: "premium", 
+          tokenId: 3,
+          price: "$0.004"
+        }
+      },
+      {
+        name: "getCoinMarkets",
+        description: "Get cryptocurrency market data (requires Token ID 3)", 
+        inputSchema: {
+          type: "object",
+          properties: {
+            vs_currency: {
+              type: "string",
+              description: "Target currency (usd, eur, etc.)"
+            },
+            ids: {
+              type: "string",
+              description: "Coin IDs comma-separated"
+            },
+            order: {
+              type: "string",
+              description: "Sort order (market_cap_desc, volume_asc, etc.)"
+            },
+            per_page: {
+              type: "number",
+              description: "Results per page (1-250)"
+            },
+            page: {
+              type: "number", 
+              description: "Page number"
+            }
+          },
+          required: ["vs_currency"]
+        },
+        protection: {
+          required: true,
+          tier: "premium",
+          tokenId: 3,
+          price: "$0.004"
+        }
+      },
+      {
+        name: "getTrending",
+        description: "Get trending cryptocurrencies (requires Token ID 5)",
+        inputSchema: {
+          type: "object",
+          properties: {},
+          required: []
+        },
+        protection: {
+          required: true,
+          tier: "pro",
+          tokenId: 5, 
+          price: "$0.006"
+        }
+      }
+    ]
+  });
+});
+
+// MCP Tool Execution - Execute tools with EVMAuth protection
+app.post('/mcp/execute', jsonRpcMiddleware);
+
+// Alternative MCP endpoint (some clients use this)
+app.post('/mcp', (req, res) => {
+  const { method, params } = req.body;
+  
+  if (method === 'tools/list') {
+    // Redirect to tools discovery
+    res.json({
+      tools: [
+        {
+          name: "ping",
+          description: "Check CoinGecko API server status",
+          inputSchema: { type: "object", properties: {}, required: [] }
+        },
+        {
+          name: "getSupportedVsCurrencies",
+          description: "Get supported currencies", 
+          inputSchema: { type: "object", properties: {}, required: [] }
+        },
+        {
+          name: "getPrice",
+          description: "Get crypto prices (Token ID 1 required)",
+          inputSchema: {
+            type: "object",
+            properties: {
+              ids: { type: "string", description: "Coin IDs" },
+              vs_currencies: { type: "string", description: "Currencies" }
+            },
+            required: ["ids", "vs_currencies"]
+          }
+        },
+        {
+          name: "getGlobal", 
+          description: "Get global data (Token ID 3 required)",
+          inputSchema: { type: "object", properties: {}, required: [] }
+        },
+        {
+          name: "getCoinMarkets",
+          description: "Get market data (Token ID 3 required)",
+          inputSchema: {
+            type: "object", 
+            properties: {
+              vs_currency: { type: "string", description: "Target currency" }
+            },
+            required: ["vs_currency"]
+          }
+        },
+        {
+          name: "getTrending",
+          description: "Get trending coins (Token ID 5 required)", 
+          inputSchema: { type: "object", properties: {}, required: [] }
+        }
+      ]
+    });
+  } else if (method === 'tools/call') {
+    // Handle tool execution through JSON-RPC middleware
+    const rpcRequest = {
+      jsonrpc: "2.0",
+      method: params.name,
+      params: params.arguments,
+      id: req.body.id || 1
+    };
+    
+    // Forward to JSON-RPC handler
+    req.body = rpcRequest;
+    jsonRpcMiddleware(req, res);
+  } else {
+    res.status(400).json({
+      error: {
+        code: -32601,
+        message: `Method ${method} not found`
+      }
+    });
+  }
+});
+
+// MCP Schema endpoint (keep for compatibility)
 app.get('/mcp/schema', (req, res) => {
   res.json(mcpSchemas);
 });
 
 // Basic health check route
 app.get('/', async (req, res) => {
-  res.json({ message: 'CoinGecko API Server is running' });
+  res.json({ 
+    message: 'Protected CoinGecko MCP Server is running',
+    mcp_endpoint: '/mcp',
+    tools_endpoint: '/mcp/tools', 
+    execute_endpoint: '/mcp/execute',
+    protection: 'EVMAuth token-gated',
+    contract: '0x9f2B42FB651b75CC3db4ef9FEd913A22BA4629Cf'
+  });
 });
 
 // PING endpoint - Check API server status
