@@ -106,15 +106,64 @@ function createProtectedExecutor(requiredTokenId, executor) {
         }
       }
       
-      // Handle error response
+      // Handle error response - return proper EVMAuth structure
       if (response.error) {
-        throw new Error(response.error.message || 'Access denied');
+        // FastMCP expects errors to be thrown, so we throw a special error
+        // that FastMCP will convert to the proper response format
+        const evmAuthError = new Error(JSON.stringify({
+          error: {
+            code: response.error.code || 'EVMAUTH_PROOF_REQUIRED',
+            message: response.error.message || 'Cryptographic proof of wallet ownership required',
+            details: response.error.details || {
+              reason: 'PROOF_MISSING',
+              contractAddress: '0x9f2B42FB651b75CC3db4ef9FEd913A22BA4629Cf',
+              chainId: 1223954
+            }
+          }
+        }));
+        evmAuthError.name = 'EVMAuthError';
+        throw evmAuthError;
       }
-      
+
       throw new Error('Invalid response from EVMAuth SDK');
     } catch (error) {
-      // Re-throw with proper error message
-      throw new Error(error.message || 'EVMAuth protection check failed');
+      // Return EVMAuth error structure for any caught errors
+      if (error.name === 'EVMAuthError') {
+        // Re-throw EVMAuth errors as-is
+        throw error;
+      }
+
+      if (error.code && error.message) {
+        // If it's already an EVMAuth error, preserve it
+        const evmAuthError = new Error(JSON.stringify({
+          error: {
+            code: error.code,
+            message: error.message,
+            details: error.details || {
+              reason: 'PROOF_MISSING',
+              contractAddress: '0x9f2B42FB651b75CC3db4ef9FEd913A22BA4629Cf',
+              chainId: 1223954
+            }
+          }
+        }));
+        evmAuthError.name = 'EVMAuthError';
+        throw evmAuthError;
+      }
+
+      // For other errors, wrap in EVMAuth structure
+      const evmAuthError = new Error(JSON.stringify({
+        error: {
+          code: 'EVMAUTH_PROOF_REQUIRED',
+          message: 'Cryptographic proof of wallet ownership required',
+          details: {
+            reason: 'PROOF_MISSING',
+            contractAddress: '0x9f2B42FB651b75CC3db4ef9FEd913A22BA4629Cf',
+            chainId: 1223954
+          }
+        }
+      }));
+      evmAuthError.name = 'EVMAuthError';
+      throw evmAuthError;
     }
   };
 }
