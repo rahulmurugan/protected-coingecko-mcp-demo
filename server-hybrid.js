@@ -1,3 +1,5 @@
+import express from 'express';
+import cors from 'cors';
 import { FastMCP } from "fastmcp";
 import { z } from "zod";
 import dotenv from 'dotenv';
@@ -42,17 +44,10 @@ try {
 }
 
 // Create FastMCP server
-const server = new FastMCP({
+const mcpServer = new FastMCP({
   name: "Protected CoinGecko MCP Server",
   version: "1.0.0",
-  description: "EVMAuth-protected cryptocurrency data access via CoinGecko API",
-  // Enable health endpoint for Railway
-  health: {
-    enabled: true,
-    path: "/health",
-    message: "OK",
-    status: 200
-  }
+  description: "EVMAuth-protected cryptocurrency data access via CoinGecko API"
 });
 
 /**
@@ -119,8 +114,9 @@ function createProtectedExecutor(requiredTokenId, executor) {
   };
 }
 
+// Add all tools to MCP server
 // Tool: Ping (Free)
-server.addTool({
+mcpServer.addTool({
   name: "ping",
   description: "Check API server status",
   parameters: z.object({
@@ -138,7 +134,7 @@ server.addTool({
 });
 
 // Tool: Get Supported VS Currencies (Free)
-server.addTool({
+mcpServer.addTool({
   name: "getSupportedVsCurrencies",
   description: "Get list of supported vs currencies",
   parameters: z.object({
@@ -156,7 +152,7 @@ server.addTool({
 });
 
 // Tool: Get Price (Basic - Token ID 1)
-server.addTool({
+mcpServer.addTool({
   name: "getPrice",
   description: "Get price data for specified cryptocurrencies in various currencies",
   parameters: z.object({
@@ -191,7 +187,7 @@ server.addTool({
 });
 
 // Tool: Get Coin Markets (Premium - Token ID 3)
-server.addTool({
+mcpServer.addTool({
   name: "getCoinMarkets",
   description: "Get market data for coins",
   parameters: z.object({
@@ -228,7 +224,7 @@ server.addTool({
 });
 
 // Tool: Get Global (Premium - Token ID 3)
-server.addTool({
+mcpServer.addTool({
   name: "getGlobal",
   description: "Get global cryptocurrency data",
   parameters: z.object({
@@ -246,7 +242,7 @@ server.addTool({
 });
 
 // Tool: Get Trending (Pro - Token ID 5)
-server.addTool({
+mcpServer.addTool({
   name: "getTrending",
   description: "Get trending coins",
   parameters: z.object({
@@ -273,35 +269,68 @@ Object.keys(TOKEN_REQUIREMENTS).forEach(methodName => {
 });
 console.log('');
 
+// Create Express app for HTTP endpoints
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'healthy',
+    server: 'protected-coingecko-mcp-demo',
+    mcp_endpoint: '/mcp',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({ 
+    name: 'Protected CoinGecko MCP Server',
+    version: '1.0.0',
+    description: 'EVMAuth-protected cryptocurrency data access via CoinGecko API',
+    endpoints: {
+      health: '/health',
+      mcp: '/mcp'
+    }
+  });
+});
+
 // Start server based on environment
 const isProduction = process.env.RAILWAY_ENVIRONMENT || process.env.NODE_ENV === 'production';
 const port = parseInt(process.env.PORT) || 3001;
 
-console.log('🚀 Starting FastMCP server...');
+console.log('🚀 Starting hybrid server...');
 console.log(`📊 Environment: ${isProduction ? 'Production' : 'Development'}`);
 console.log(`🔧 Port: ${port}`);
 
 if (isProduction) {
   // For Railway/production deployment
   try {
-    await server.start({
-      transportType: "httpStream",
-      httpStream: {
-        port: port,
-        endpoint: "/mcp",
-        // Bind to all interfaces for Railway
-        host: "0.0.0.0"
-      }
+    // Get the MCP transport handler
+    const mcpHandler = mcpServer.createHttpHandler();
+    
+    // Mount MCP handler at /mcp
+    app.post('/mcp', mcpHandler);
+    app.get('/mcp', mcpHandler);
+    
+    // Start Express server
+    const server = app.listen(port, '0.0.0.0', () => {
+      console.log(`✅ Hybrid server running on http://0.0.0.0:${port}`);
+      console.log(`📍 Health endpoint: http://0.0.0.0:${port}/health`);
+      console.log(`📍 MCP endpoint: http://0.0.0.0:${port}/mcp`);
+      console.log(`🔐 EVMAuth protection: ${evmAuthSDK ? 'Enabled' : 'Disabled'}`);
+      console.log(`🌐 Ready to accept connections`);
     });
-    console.log(`✅ FastMCP server running on http://0.0.0.0:${port}`);
-    console.log(`📍 MCP endpoint: http://0.0.0.0:${port}/mcp`);
-    console.log(`🔐 EVMAuth protection: ${evmAuthSDK ? 'Enabled' : 'Disabled'}`);
-    console.log(`🌐 Ready to accept connections`);
     
     // Keep process alive
     process.on('SIGTERM', () => {
       console.log('SIGTERM received, shutting down gracefully');
-      process.exit(0);
+      server.close(() => {
+        console.log('Server closed');
+        process.exit(0);
+      });
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error);
@@ -310,7 +339,7 @@ if (isProduction) {
   }
 } else {
   // For local development
-  server.start({
+  mcpServer.start({
     transportType: "stdio"
   });
 }

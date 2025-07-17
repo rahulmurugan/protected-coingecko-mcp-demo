@@ -41,18 +41,11 @@ try {
   console.log('⚠️  Server will run WITHOUT token protection');
 }
 
-// Create FastMCP server
+// Create FastMCP server with SSE transport config
 const server = new FastMCP({
   name: "Protected CoinGecko MCP Server",
   version: "1.0.0",
-  description: "EVMAuth-protected cryptocurrency data access via CoinGecko API",
-  // Enable health endpoint for Railway
-  health: {
-    enabled: true,
-    path: "/health",
-    message: "OK",
-    status: 200
-  }
+  description: "EVMAuth-protected cryptocurrency data access via CoinGecko API"
 });
 
 /**
@@ -277,26 +270,27 @@ console.log('');
 const isProduction = process.env.RAILWAY_ENVIRONMENT || process.env.NODE_ENV === 'production';
 const port = parseInt(process.env.PORT) || 3001;
 
-console.log('🚀 Starting FastMCP server...');
+console.log('🚀 Starting FastMCP server with SSE transport...');
 console.log(`📊 Environment: ${isProduction ? 'Production' : 'Development'}`);
 console.log(`🔧 Port: ${port}`);
 
 if (isProduction) {
-  // For Railway/production deployment
+  // For Railway/production deployment - use SSE transport
   try {
     await server.start({
-      transportType: "httpStream",
-      httpStream: {
-        port: port,
-        endpoint: "/mcp",
-        // Bind to all interfaces for Railway
-        host: "0.0.0.0"
+      transportType: "sse",
+      sse: {
+        endpoint: "/sse",
+        cors: {
+          origin: "*", // Allow all origins for claude.ai
+          credentials: true
+        }
       }
     });
-    console.log(`✅ FastMCP server running on http://0.0.0.0:${port}`);
-    console.log(`📍 MCP endpoint: http://0.0.0.0:${port}/mcp`);
+    console.log(`✅ FastMCP server running with SSE transport on port ${port}`);
+    console.log(`📍 SSE endpoint: http://0.0.0.0:${port}/sse`);
     console.log(`🔐 EVMAuth protection: ${evmAuthSDK ? 'Enabled' : 'Disabled'}`);
-    console.log(`🌐 Ready to accept connections`);
+    console.log(`🌐 Ready to accept SSE connections`);
     
     // Keep process alive
     process.on('SIGTERM', () => {
